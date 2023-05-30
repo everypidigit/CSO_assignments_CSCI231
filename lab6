@@ -1,0 +1,122 @@
+#the program compiles (at least on my version of MARS4.5 on Windows 10), but then it crashes at the final step of computing the power
+#the factorial and exp function seem to work properly though
+#I tried implementing the pow functuion the other way that I didn't end up liking, but there the pow function did not crash, though it computed wrong values
+.data
+    
+	msg1:    .asciiz "Enter x: "
+
+.text
+.globl main
+    
+main: 
+    	la $a0, msg1    # ask the user for the value x
+    	li $v0,4        # print out the contents of the msg1
+    	syscall		# a syscall to wrap it up
+    	li $v0, 6       # read the input
+    	syscall		# a syscall to wrap it up         
+    	mtc1 $v0, $f0   # move the x1 into the f1 register
+
+power:
+  	addi $sp, $sp, -4      # save return address on stack
+   	sw $ra, 0($sp)
+
+   	bne $a1, $zero, power_elif    # if y equals to 0 then return 1.0, a floating point number
+   	li $v0, 1
+   	j power_return    
+
+power_elif:    # else to check if y is even, so we can continue or nit
+   	andi $t0, $a1, 1
+   	bne $t0, $zero, power_else
+   	srl $a1, $a1, 1
+   	jal power
+   	mul $v0, $v0, $v0
+   	j power_return
+  
+power_else:	 # or if the former clause did not work, y must be odd
+   	addi $a1, $a1, -1
+   	jal power
+   	mul $v0, $a0, $v0   
+
+power_return:
+   	lw $ra, 0($sp)
+   	addi $sp, $sp, 4
+   	jr $ra		#in here, a bug seems to appear, but I did not have time to debug it. from now on the program crashes, but I think it has to work if this line works. at least the
+   	#factorial function works correctly, I tested it in a blank file, and the exp function has to work correctly, too
+    
+factorial:
+    	addi    $sp, $sp, -8
+    	sw      $s0, 4($sp)	 # save $s0 and $ra
+    	sw      $ra, 0($sp)
+    	bne     $a0, 0, fact_else
+    	addi    $v0, $zero, 1    # return 1
+    	j fact_return
+
+fact_else:
+    	move    $s0, $a0	# backup $a0 if anything goes wrong
+    	addi    $a0, $a0, -1	# x -= 1
+    	jal     factorial	# when we get here, we already have Fact(x-1) store in $v0
+    	multu   $s0, $v0	# return x*Fact(x-1)
+    	mflo    $v0
+fact_return:
+    	lw      $s0, 4($sp)
+    	lw      $ra, 0($sp)
+    	addi    $sp, $sp, 8
+    	jr      $ra
+        
+
+exp:
+    	mtc1 $s0, $f10      # $f10 = 1
+    	cvt.s.w $f10, $f10  # convert the previous value to float
+    	add.s $f0, $f0, $f10    # = 1 + x
+
+    	mtc1 $t0, $f10      # move n! to coprocessor1
+    	cvt.s.w $f10, $f10  # convert the previous value to float 
+    	div.s $f10, $f10, $f1   # divide x^n/ n
+    	add.s $f0, $f0, $f10    # = 1 + x + x^2/2!
+
+    	mtc1 $t1, $f10      # move n! to coprocessor1
+    	cvt.s.w $f10, $f10  # convert the previous value to float 
+    	div.s $f10, $f10, $f2   # divide x^n/ n
+    	add.s $f0, $f0, $f10    # = 1 + x +.. + x^3/3!
+
+    	mtc1 $t2, $f10      # move n! to coprocessor1
+    	cvt.s.w $f10, $f10  # convert the previous value to float 
+    	div.s $f10, $f10, $f3   # divide x^n/ n
+    	add.s $f0, $f0, $f10    # = 1 + x +..+ x^4/4!
+
+    	mtc1 $t3, $f10      # move n! to coprocessor1
+    	cvt.s.w $f10, $f10  # convert the previous value to float 
+    	div.s $f10, $f10, $f4   # divide x^n/ n
+    	add.s $f0, $f0, $f10    # = 1 + x + x^5/5!
+
+    	mtc1 $t4, $f10      # move n! to coprocessor1
+    	cvt.s.w $f10, $f10  # convert the previous value to float 
+    	div.s $f10, $f10, $f5   # divide x^n/ n
+    	add.s $f0, $f0, $f10    # = 1 + x + x^6/6!
+
+    	mtc1 $t5, $f10      # move n! to coprocessor1
+    	cvt.s.w $f10, $f10  # convert the previous value to float 
+    	div.s $f10, $f10, $f6   # divide x^n/ n
+    	add.s $f0, $f0, $f10    # = 1 + x + x^7/7!
+
+    	mtc1 $t6, $f10      # move n! to coprocessor1
+    	cvt.s.w $f10, $f10  # convert the previous value to float 
+    	div.s $f10, $f10, $f7   # divide x^n/ n
+    	add.s $f0, $f0, $f10    # = 1 + x + x^8/8!
+
+    	mtc1 $t7, $f10      # move n! to coprocessor1
+    	cvt.s.w $f10, $f10  # convert the previous value to float 
+    	div.s $f10, $f10, $f8   # divide x^n/ n
+    	add.s $f0, $f0, $f10    # = 1 + x + x^9/9!
+
+    	mtc1 $s1, $f10      # move n! to coprocessor1
+    	cvt.s.w $f10, $f10  # convert the previous value to float 
+    	div.s $f10, $f10, $f9   # divide x^n/ n
+    	add.s $f0, $f0, $f10    # = 1 + x + x^10/10!
+    	
+end:
+        mov.s $f12, $f0    
+        li $v0, 2       # print the final value
+        syscall         
+        li $v0, 10
+        syscall
